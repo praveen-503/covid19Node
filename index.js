@@ -31,7 +31,7 @@ app.get('/india-latest', async (req, res) => {
       });
   
   })
-
+  
   app.get('/india-predict-data', async (req, res) => {
     await request('https://covid19proarch.blob.core.windows.net/datasets/India_Prediction.xlsx',
       { encoding: null }, async function (error, response, body) {
@@ -41,9 +41,9 @@ app.get('/india-latest', async (req, res) => {
         res.json(await ConvertPredectionData(XLSX.utils.sheet_to_json(ws, { header: 1 })));
       });
   })
-
+  
   app.get('/hospitalList', async (req, res) => {
-    await request('https://covid19proarch.blob.core.windows.net/datasets/India%20_hospital_testing_data.xlsx',
+    await request('https://covid19proarch.blob.core.windows.net/datasets/India%20-%20hospital%2C%20testing%20data.xlsx',
       { encoding: null }, async function (error, response, body) {
         var workbook = await XLSX.read(body);
         const wsname = workbook.SheetNames[0];
@@ -51,7 +51,7 @@ app.get('/india-latest', async (req, res) => {
         res.json(await ConvertHospitalTestData(XLSX.utils.sheet_to_json(ws, { header: 1 })));
       });
   })
-
+  
   app.get('/india-actual-daywise', async (req, res) => {
     await request('https://covid19proarch.blob.core.windows.net/datasets/Inida_Actuals_Daywise.xlsx',
       { encoding: null }, async function (error, response, body) {
@@ -61,7 +61,7 @@ app.get('/india-latest', async (req, res) => {
         res.json(await ConvertActualDateWiseData(XLSX.utils.sheet_to_json(ws, { header: 1 })));
       });
   })
-
+  
   app.get('/india-statewise-data', async (req, res) => {
     await request('https://covid19proarch.blob.core.windows.net/datasets/State_Wise_Actuals.xlsx',
       { encoding: null }, async function (error, response, body) {
@@ -71,7 +71,7 @@ app.get('/india-latest', async (req, res) => {
         res.json(await ConvertStateWiseData(XLSX.utils.sheet_to_json(ws, { header: 1 })));
       });
   })
-
+  
   async function ConvertLatestData(data) {
     var latestData = [];
     await data.forEach(element => {
@@ -236,6 +236,12 @@ app.get('/india-latest', async (req, res) => {
     });
     return stateWiseData.slice(0, 5);
   }
+  
+  app.get('/', (req, res) => {
+    res.writeHead(200, {"Content-Type": "text/plain"});
+    res.end("Hello World! Praveen Chandu Working on Covid");
+  });
+  
 
 
 

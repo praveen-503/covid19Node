@@ -94,14 +94,23 @@ app.get('/indiastatewisedata', async (req, res) => {
     });
 })
 
-app.get('/daily-and-cumlative-charts', async (req, res) => {
+app.get('/dailyCumulativecharts', async (req, res) => {
   await request('https://covid19proarch.blob.core.windows.net/datasets/State_Actuals_Daywise.xlsx',
     { encoding: null }, async function (error, response, body) {
       var workbook = await XLSX.read(body);
       const wsname = workbook.SheetNames[0];
       const ws = workbook.Sheets[wsname];
-      var stateWiseData = await ConvertStateData(XLSX.utils.sheet_to_json(ws, { header: 1 }));
-      res.json(await ConvertToDailyCumlativeChart(Object.assign([], stateWiseData)));
+      await request('https://covid19proarch.blob.core.windows.net/datasets/State%20Code.xlsx',
+      { encoding: null }, async function (error, response, body1) {
+        var workbook1 = await XLSX.read(body1);
+        const wsname1 = workbook1.SheetNames[0];
+        const ws1 = workbook1.Sheets[wsname1];
+        var stateCode = await GetStateCodeName(XLSX.utils.sheet_to_json(ws1, { header: 1 }));
+        var stateWiseData = await ConvertStateData(XLSX.utils.sheet_to_json(ws, { header: 1 }), stateCode);
+
+        res.json(await ConvertToDailyCumlativeChart(Object.assign([], stateWiseData)));
+      });
+      
     });
 })
 

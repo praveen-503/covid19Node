@@ -101,19 +101,99 @@ app.get('/dailyCumulativecharts', async (req, res) => {
       const wsname = workbook.SheetNames[0];
       const ws = workbook.Sheets[wsname];
       await request('https://covid19proarch.blob.core.windows.net/datasets/State%20Code.xlsx',
-      { encoding: null }, async function (error, response, body1) {
-        var workbook1 = await XLSX.read(body1);
-        const wsname1 = workbook1.SheetNames[0];
-        const ws1 = workbook1.Sheets[wsname1];
-        var stateCode = await GetStateCodeName(XLSX.utils.sheet_to_json(ws1, { header: 1 }));
-        var stateWiseData = await ConvertStateData(XLSX.utils.sheet_to_json(ws, { header: 1 }), stateCode);
+        { encoding: null }, async function (error, response, body1) {
+          var workbook1 = await XLSX.read(body1);
+          const wsname1 = workbook1.SheetNames[0];
+          const ws1 = workbook1.Sheets[wsname1];
+          var stateCode = await GetStateCodeName(XLSX.utils.sheet_to_json(ws1, { header: 1 }));
+          var stateWiseData = await ConvertStateData(XLSX.utils.sheet_to_json(ws, { header: 1 }), stateCode);
 
-        res.json(await ConvertToDailyCumlativeChart(Object.assign([], stateWiseData)));
-      });
-      
+          res.json(await ConvertToDailyCumlativeChart(Object.assign([], stateWiseData)));
+        });
+
     });
 })
 
+app.get('/predectionData', async (req, res) => {
+  await request('https://covid19proarch.blob.core.windows.net/datasets/Prediction_data.xlsx',
+    { encoding: null }, async function (error, response, body) {
+      var workbook = await XLSX.read(body);
+      const wsname = workbook.SheetNames;
+      var predectionList = [];
+      for(var i =0;i<wsname.length;i++){
+        const ws = workbook.Sheets[wsname[i]];
+        predectionList.push(await ConvertPredectionDataSheet(XLSX.utils.sheet_to_json(ws, { header: 1 })));
+      }
+
+      res.json(predectionList);
+    });
+})
+
+async function ConvertPredectionDataSheet(data) {
+  var p1Series = [];
+  var p2Series = [];
+  var p3Series = [];
+  var s1Series = [];
+  var s2Series = [];
+  var s3Series = [];
+  var h1Series = [];
+  var h2Series = [];
+  var h3Series = [];
+  await data.forEach(element => {
+    if (element[0] != "Country" && element[0] != "State" && element[0] != null) {
+      var date = new Date(1899, 12, element[2] - 1).toLocaleDateString();
+      p1Series.push({
+        "name": date,
+        "value": NullObjects(element[3])
+      });
+      p2Series.push({
+        "name": date,
+        "value": NullObjects(element[4])
+      });
+      p3Series.push({
+        "name": date,
+        "value": NullObjects(element[5])
+      });
+
+      s1Series.push({
+        "name": date,
+        "value": NullObjects(element[6])
+      });
+      s2Series.push({
+        "name": date,
+        "value": NullObjects(element[7])
+      });
+      s3Series.push({
+        "name": date,
+        "value": NullObjects(element[8])
+      });
+
+      h1Series.push({
+        "name": date,
+        "value": NullObjects(element[9])
+      });
+      h2Series.push({
+        "name": date,
+        "value": NullObjects(element[10])
+      });
+      h3Series.push({
+        "name": date,
+        "value": NullObjects(element[11])
+      });
+
+    }
+  });
+  return {
+    name: data[1][0],
+    code: data[1][1],
+    series1: [{ "name": "P1", "series": p1Series }, { "name": "S1", "series": s1Series }],
+    series2: [{ "name": "P2", "series": p2Series }, { "name": "S2", "series": s2Series }],
+    series3: [{ "name": "P3", "series": p3Series }, { "name": "S3", "series": s3Series }],
+    hospitalSeries: [[{ "name": "H1", "series": h1Series }],
+    [{ "name": "H2", "series": h2Series }],
+    [{ "name": "H3", "series": h3Series }]]
+  }
+}
 
 async function GetStateCodeName(data) {
   var stateCodes = [];

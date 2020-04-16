@@ -78,12 +78,102 @@ app.get('/indiastatewisedata', async (req, res) => {
       var workbook = await XLSX.read(body);
       const wsname = workbook.SheetNames[0];
       const ws = workbook.Sheets[wsname];
-      var stateWiseData = await ConvertStateData(XLSX.utils.sheet_to_json(ws, { header: 1 }));
-      var statesData = await TotalOfEachState(Object.assign([], stateWiseData));
-      var top5States = await Top5States(Object.assign([], statesData));
-      res.json({ StatesData: statesData, top5States: top5States, stateWiseData: stateWiseData });
+      await request('https://covid19proarch.blob.core.windows.net/datasets/State%20Code.xlsx',
+        { encoding: null }, async function (error, response, body1) {
+          var workbook1 = await XLSX.read(body1);
+          const wsname1 = workbook1.SheetNames[0];
+          const ws1 = workbook1.Sheets[wsname1];
+          var stateCode = await GetStateCodeName(XLSX.utils.sheet_to_json(ws1, { header: 1 }));
+          var stateWiseData = await ConvertStateData(XLSX.utils.sheet_to_json(ws, { header: 1 }), stateCode);
+
+          var statesData = await TotalOfEachState(Object.assign([], stateWiseData));
+          var top5States = await Top5States(Object.assign([], statesData));
+          res.json({ StatesData: statesData, top5States: top5States });
+        });
+
     });
 })
+
+app.get('/daily-and-cumlative-charts', async (req, res) => {
+  await request('https://covid19proarch.blob.core.windows.net/datasets/State_Actuals_Daywise.xlsx',
+    { encoding: null }, async function (error, response, body) {
+      var workbook = await XLSX.read(body);
+      const wsname = workbook.SheetNames[0];
+      const ws = workbook.Sheets[wsname];
+      var stateWiseData = await ConvertStateData(XLSX.utils.sheet_to_json(ws, { header: 1 }));
+      res.json(await ConvertToDailyCumlativeChart(Object.assign([], stateWiseData)));
+    });
+})
+
+
+async function GetStateCodeName(data) {
+  var stateCodes = [];
+  await data.forEach(ele => {
+    if (ele[0] != "State" && ele[0] != null) {
+      stateCodes.push({ name: ele[0], code: ele[1] });
+    }
+  })
+  return stateCodes;
+}
+
+async function ConvertToDailyCumlativeChart(data) {
+  var chartData = [];
+  await data.forEach(element => {
+    var cumlativeConfirmed = 0, cumlativeRecovered = 0, cumlativeDeceased = 0;
+    var dailyConfirmedCasesSeries = [],
+      dailyRecoveredCasesSeries = [],
+      dailyDeceasedCasesSeries = [],
+      cumlativeConfirmedCasesSeries = [],
+      cumlativeRecoveredCasesSeries = [],
+      cumlativeDeceasedCasesSeries = [];
+
+    element.data.forEach(ele => {
+      cumlativeConfirmed += ele.confirmed;
+      cumlativeRecovered += ele.recovered;
+      cumlativeDeceased += ele.deceased;
+      dailyConfirmedCasesSeries.push({
+        "name": ele.date,
+        "value": ele.confirmed
+      })
+      dailyRecoveredCasesSeries.push({
+        "name": ele.date,
+        "value": ele.recovered
+      })
+      dailyDeceasedCasesSeries.push({
+        "name": ele.date,
+        "value": ele.deceased
+      })
+      cumlativeConfirmedCasesSeries.push({
+        "name": ele.date,
+        "value": cumlativeConfirmed
+      })
+      cumlativeRecoveredCasesSeries.push({
+        "name": ele.date,
+        "value": cumlativeRecovered
+      })
+      cumlativeDeceasedCasesSeries.push({
+        "name": ele.date,
+        "value": cumlativeDeceased
+      })
+    })
+    chartData.push({
+      stateCode: element.stateCode,
+      daily: [
+        [{ "name": "Confirmed cases", "series": dailyConfirmedCasesSeries }],
+        [{ "name": "Recovered cases", "series": dailyRecoveredCasesSeries }],
+        [{ "name": "Deceased cases", "series": dailyDeceasedCasesSeries }],
+      ],
+      cumulative: [
+        [{ "name": "Confirmed cases", "series": cumlativeConfirmedCasesSeries }],
+        [{ "name": "Recovered cases", "series": cumlativeRecoveredCasesSeries }],
+        [{ "name": "Deceased cases", "series": cumlativeDeceasedCasesSeries }]
+      ],
+    })
+  })
+  return chartData;
+
+}
+
 
 async function Top5States(data) {
   data.splice(0, 1);
@@ -108,6 +198,7 @@ async function TotalOfEachState(stateWiseData) {
     var deceasedCount = element.data.sum('deceased');
     data.push(
       {
+        name: element.name,
         stateCode: element.stateCode,
         confirmedCount: confirmedCount,
         activeCount: (confirmedCount - recoveredCount - deceasedCount),
@@ -118,7 +209,7 @@ async function TotalOfEachState(stateWiseData) {
   return data;
 }
 
-async function ConvertStateData(data) {
+async function ConvertStateData(data, stateCode) {
   //Todo : need to send dates;
   var dates = [];
   var stateCodes = data[0];
@@ -135,13 +226,18 @@ async function ConvertStateData(data) {
       });
       j = j + 3;
     }
-    stateWiseData.push({ stateCode: stateCodes[i], data: data2 });
+    await stateCode.forEach(ele => {
+      if (ele.code == stateCodes[i]) {
+        stateWiseData.push({ name: ele.name, stateCode: stateCodes[i], data: data2 });
+      }
+    });
   }
 
 
 
   return stateWiseData;
 }
+
 function NullObjects(data) {
   if (data == null) {
     return 0

@@ -149,6 +149,33 @@ app.get('/topDistrictsByStateCode/:stateCode', async function (req, res) {
     });
 });
 
+app.get('/hospitalData', async function (req, res) {
+  await request('https://covid19proarch.blob.core.windows.net/datasets/India_Others_Details.xlsx',
+    { encoding: null }, async function (error, response, body) {
+      var workbook = await XLSX.read(body);
+      const wsname = workbook.SheetNames[0];
+      const ws = workbook.Sheets[wsname];
+      res.json(await ConvertHospitalData(XLSX.utils.sheet_to_json(ws, { header: 1 })));
+     
+
+    });
+});
+
+async function ConvertHospitalData(data) {
+  var names = data[0];
+  var hospitalData = [];
+  for (var i = 1; i < names.length; i++) {
+    var tableData = [];
+    for (var j = 1; j < data.length; j++) {
+      if (data[j][0] != null) {
+        tableData.push({ name: data[j][0], count: await NullObjects(data[j][i]) })
+      }
+    }
+    hospitalData.push({ code: names[i], data: tableData });
+  }
+  return hospitalData;
+}
+
 async function Top5Districts(data) {
   await data.sort(function (a, b) {
     return b.confirmedCount - a.confirmedCount;

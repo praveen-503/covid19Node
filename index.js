@@ -185,7 +185,8 @@ app.post('/hotspotDistance', async function (req, res) {
         })
       });
       var result = await GetSortestDistance(Object.assign([], hotspotWithDistance))
-      res.json(result);
+      var outData = { data: result[0].data, distance: Math.round((result[0].distance + Number.EPSILON) * 100) / 100 }
+      res.json(outData);
     });
 });
 

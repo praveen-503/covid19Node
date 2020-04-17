@@ -114,20 +114,74 @@ app.get('/dailyCumulativecharts', async (req, res) => {
     });
 })
 
-app.get('/predectionData', async (req, res) => {
+app.get('/predectionData/:stateCode', async (req, res) => {
   await request('https://covid19proarch.blob.core.windows.net/datasets/Prediction_data.xlsx',
     { encoding: null }, async function (error, response, body) {
       var workbook = await XLSX.read(body);
       const wsname = workbook.SheetNames;
-      var predectionList = [];
-      for(var i =0;i<wsname.length;i++){
-        const ws = workbook.Sheets[wsname[i]];
-        predectionList.push(await ConvertPredectionDataSheet(XLSX.utils.sheet_to_json(ws, { header: 1 })));
+      var stateCode = req.params.stateCode
+      if (wsname.includes(stateCode)) {
+        const ws = workbook.Sheets[stateCode];
+        res.json(await ConvertPredectionDataSheet(XLSX.utils.sheet_to_json(ws, { header: 1 })));
       }
-
-      res.json(predectionList);
+      else {
+        res.json("Not Found");
+      }
     });
 })
+
+app.get('/topDistrictsByStateCode/:stateCode', async function (req, res) {
+  await request('https://covid19proarch.blob.core.windows.net/datasets/District_Actuals.xlsx',
+    { encoding: null }, async function (error, response, body) {
+      var workbook = await XLSX.read(body);
+      const wsname = workbook.SheetNames;
+      var stateCode = req.params.stateCode
+      if (wsname.includes(stateCode)) {
+        const ws = workbook.Sheets[stateCode];
+        var totalOfDistrictWise = await TotalDistictsData(XLSX.utils.sheet_to_json(ws, { header: 1 }));
+        var top5Districts = await Top5Districts(Object.assign([], totalOfDistrictWise))
+        res.json(top5Districts)
+      }
+      else {
+        res.json("Not Found");
+      }
+
+    });
+});
+
+async function Top5Districts(data) {
+  await data.sort(function (a, b) {
+    return b.confirmedCount - a.confirmedCount;
+  });
+  return data.slice(0, 5);
+}
+
+async function TotalDistictsData(data) {
+  var districtNames = data[0];
+  var data2 = [];
+  for (var i = 2; i < districtNames.length; i++) {
+    var confirmedCount = 0;
+    var recoveredCount = 0;
+    var deceasedCount = 0;
+    for (var j = 1; j < data.length;) {
+
+      confirmedCount += await NullObjects(data[j][i]);
+      recoveredCount += await NullObjects(data[j + 1][i]);
+      deceasedCount += await NullObjects(data[j + 2][i]);
+
+      j = j + 3;
+    }
+    data2.push({
+      name: districtNames[i],
+      confirmedCount: confirmedCount,
+      activeCount: (confirmedCount - recoveredCount - deceasedCount),
+      recoveredCount: recoveredCount,
+      deceasedCount: deceasedCount
+    })
+
+  }
+  return data2;
+}
 
 async function ConvertPredectionDataSheet(data) {
   var p1Series = [];
@@ -299,8 +353,6 @@ async function TotalOfEachState(stateWiseData) {
 }
 
 async function ConvertStateData(data, stateCode) {
-  //Todo : need to send dates;
-  var dates = [];
   var stateCodes = data[0];
   var stateWiseData = [];
 
@@ -321,9 +373,6 @@ async function ConvertStateData(data, stateCode) {
       }
     });
   }
-
-
-
   return stateWiseData;
 }
 

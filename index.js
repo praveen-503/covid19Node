@@ -191,24 +191,27 @@ async function TotalDistictsData(data) {
   var districtNames = data[0];
   var data2 = [];
   for (var i = 2; i < districtNames.length; i++) {
-    var confirmedCount = 0;
-    var recoveredCount = 0;
-    var deceasedCount = 0;
-    for (var j = 1; j < data.length;) {
+    if (districtNames[i] != "Unidentified") {
+      var confirmedCount = 0;
+      var recoveredCount = 0;
+      var deceasedCount = 0;
+      for (var j = 1; j < data.length;) {
 
-      confirmedCount += await NullObjects(data[j][i]);
-      recoveredCount += await NullObjects(data[j + 1][i]);
-      deceasedCount += await NullObjects(data[j + 2][i]);
+        confirmedCount += await NullObjects(data[j][i]);
+        recoveredCount += await NullObjects(data[j + 1][i]);
+        deceasedCount += await NullObjects(data[j + 2][i]);
 
-      j = j + 3;
+        j = j + 3;
+      }
+      data2.push({
+        name: districtNames[i],
+        confirmedCount: confirmedCount,
+        activeCount: (confirmedCount - recoveredCount - deceasedCount),
+        recoveredCount: recoveredCount,
+        deceasedCount: deceasedCount
+      })
     }
-    data2.push({
-      name: districtNames[i],
-      confirmedCount: confirmedCount,
-      activeCount: (confirmedCount - recoveredCount - deceasedCount),
-      recoveredCount: recoveredCount,
-      deceasedCount: deceasedCount
-    })
+
 
   }
   return data2;

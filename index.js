@@ -332,9 +332,9 @@ async function ConvertPredectionDataSheet(data) {
   return {
     name: data[1][0],
     code: data[1][1],
-    series1: [{ "name": "Asymptomatic1", "series": p1Series }, { "name": "Symptomatic1", "series": s1Series }],
-    series2: [{ "name": "Asymptomatic2", "series": p2Series }, { "name": "Symptomatic2", "series": s2Series }],
-    series3: [{ "name": "Asymptomatic3", "series": p3Series }, { "name": "Symptomatic3", "series": s3Series }],
+    series1: [{ "name": "Asymptomatic", "series": p1Series }, { "name": "Symptomatic", "series": s1Series }],
+    series2: [{ "name": "Asymptomatic", "series": p2Series }, { "name": "Symptomatic", "series": s2Series }],
+    series3: [{ "name": "Asymptomatic", "series": p3Series }, { "name": "Symptomatic", "series": s3Series }],
     hospitalSeries: [[{ "name": "H1", "series": h1Series }],
     [{ "name": "H2", "series": h2Series }],
     [{ "name": "H3", "series": h3Series }]]

@@ -250,7 +250,7 @@ async function Top5Districts(data) {
   await data.sort(function (a, b) {
     return b.confirmedCount - a.confirmedCount;
   });
-  return data.slice(0, 5);
+  return data;
 }
 
 async function TotalDistictsData(data, stateCode) {

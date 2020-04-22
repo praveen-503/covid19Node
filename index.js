@@ -131,15 +131,16 @@ app.get('/predectionData/:stateCode', async (req, res) => {
 })
 
 app.get('/topDistrictsByStateCode/:stateCode', async function (req, res) {
-  await request('https://covid19proarch.blob.core.windows.net/datasets/District_Actuals.xlsx',
+  await request('https://covid19proarch.blob.core.windows.net/datasets/india_district_actuals.xlsx',
     { encoding: null }, async function (error, response, body) {
       var workbook = await XLSX.read(body);
-      const wsname = workbook.SheetNames;
+      const wsname = workbook.SheetNames[0];
+      const ws = workbook.Sheets[wsname];
       var stateCode = req.params.stateCode
-      if (wsname.includes(stateCode)) {
-        const ws = workbook.Sheets[stateCode];
-        var totalOfDistrictWise = await TotalDistictsData(XLSX.utils.sheet_to_json(ws, { header: 1 }));
-        var top5Districts = await Top5Districts(Object.assign([], totalOfDistrictWise))
+
+      var totalOfDistrictWise = await TotalDistictsData(XLSX.utils.sheet_to_json(ws, { header: 1 }), stateCode);
+      var top5Districts = await Top5Districts(Object.assign([], totalOfDistrictWise))
+      if (top5Districts.length > 0) {
         res.json(top5Districts)
       }
       else {
@@ -252,33 +253,25 @@ async function Top5Districts(data) {
   return data.slice(0, 5);
 }
 
-async function TotalDistictsData(data) {
-  var districtNames = data[0];
+async function TotalDistictsData(data, stateCode) {
+
   var data2 = [];
-  for (var i = 2; i < districtNames.length; i++) {
-    if (districtNames[i] != "Unidentified") {
-      var confirmedCount = 0;
-      var recoveredCount = 0;
-      var deceasedCount = 0;
-      for (var j = 1; j < data.length;) {
-
-        confirmedCount += await NullObjects(data[j][i]);
-        recoveredCount += await NullObjects(data[j + 1][i]);
-        deceasedCount += await NullObjects(data[j + 2][i]);
-
-        j = j + 3;
-      }
+  await data.forEach(ele => {
+    if (ele[1] == stateCode) {
       data2.push({
-        name: districtNames[i],
-        confirmedCount: confirmedCount,
-        activeCount: (confirmedCount - recoveredCount - deceasedCount),
-        recoveredCount: recoveredCount,
-        deceasedCount: deceasedCount
+        name: ele[2],
+        confirmedCount: ele[3],
+        activeCount: ele[4],
+        recoveredCount: ele[5],
+        deceasedCount: ele[6]
       })
     }
 
+  });
 
-  }
+
+
+
   return data2;
 }
 

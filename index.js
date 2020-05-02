@@ -21,7 +21,7 @@ app.use(function (req, res, next) {
 app.use(express.static(path.join(__dirname, 'build')));
 
 app.get('/indiastatewisedata', async (req, res) => {
-  try {
+  
     await request('https://covid19proarch.blob.core.windows.net/datasets/State_Actuals_Daywise.xlsx',
       { encoding: null }, async function (error, response, body) {
         var workbook = await XLSX.read(body);
@@ -41,14 +41,10 @@ app.get('/indiastatewisedata', async (req, res) => {
           });
 
       });
-  }
-  catch (e) {
-    res.send(e)
-  }
 })
 
 app.get('/dailyCumulativecharts', async (req, res) => {
-  try {
+  
     await request('https://covid19proarch.blob.core.windows.net/datasets/State_Actuals_Daywise.xlsx',
       { encoding: null }, async function (error, response, body) {
         var workbook = await XLSX.read(body);
@@ -66,14 +62,11 @@ app.get('/dailyCumulativecharts', async (req, res) => {
           });
 
       });
-  }
-  catch (e) {
-    res.send(e)
-  }
+  
 })
 
 app.get('/predectionData/:stateCode', async (req, res) => {
-  try {
+  
     await request('https://covid19proarch.blob.core.windows.net/datasets/Prediction_data.xlsx',
       { encoding: null }, async function (error, response, body) {
         var workbook = await XLSX.read(body);
@@ -87,14 +80,11 @@ app.get('/predectionData/:stateCode', async (req, res) => {
           res.json("Not Found");
         }
       });
-  }
-  catch (e) {
-    res.send(e)
-  }
+ 
 })
 
 app.get('/topDistrictsByStateCode/:stateCode', async function (req, res) {
-  try {
+  
     await request('https://covid19proarch.blob.core.windows.net/datasets/india_district_actuals.xlsx',
       { encoding: null }, async function (error, response, body) {
         var workbook = await XLSX.read(body);
@@ -112,10 +102,7 @@ app.get('/topDistrictsByStateCode/:stateCode', async function (req, res) {
         }
 
       });
-  }
-  catch (e) {
-    res.send(e)
-  }
+ 
 });
 
 app.get('/hospitalData/:code', async function (req, res) {

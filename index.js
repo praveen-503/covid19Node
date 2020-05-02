@@ -18,7 +18,7 @@ app.use(function (req, res, next) {
 });
 
 // Server any static files
-app.use(express.static(path.join(__dirname, 'build')));
+// app.use(express.static(path.join(__dirname, 'build')));
 
 app.get('/indiastatewisedata', async (req, res) => {
   
